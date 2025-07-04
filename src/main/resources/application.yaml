@@ -8,3 +8,7 @@ spring:
         model: qwen3:0.6b
     openai:
       api-key: ${DASHSCOPE_API_KEY}
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor: debug
+    com.yanzhiyu.springai: debug

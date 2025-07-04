@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: spring-ai
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen3:0.6b
+    openai:
+      api-key: ${DASHSCOPE_API_KEY}

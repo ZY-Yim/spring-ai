@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
-
 /**
  * @author yanzhiyu
  * @date 2025/7/4
@@ -22,10 +21,11 @@ public class ChatController {
     ChatClient chatClient;
 
     @RequestMapping(value = "/chat", produces = "text/html;charset=utf-8")
-    public Flux<String> chat(String prompt)
+    public Flux<String> chat(String prompt, String chatId)
     {
         return chatClient.prompt()
                 .user(prompt)
+                .advisors(a -> a.param("chatId", chatId))
                 .stream()
                 .content();
     }

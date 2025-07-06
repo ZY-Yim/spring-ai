@@ -7,7 +7,12 @@ spring:
       chat:
         model: qwen3:0.6b
     openai:
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
       api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+          temperature: 0.7
 logging:
   level:
     org.springframework.ai.chat.client.advisor: debug

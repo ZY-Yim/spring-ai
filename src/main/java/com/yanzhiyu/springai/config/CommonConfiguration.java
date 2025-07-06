@@ -6,10 +6,14 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
+
+import static com.yanzhiyu.springai.constants.SystemConstants.GAME_SYSTEM_PROMPT;
+import static com.yanzhiyu.springai.constants.SystemConstants.SYSTEM_PROMPT;
 
 /**
  * @author yanzhiyu
@@ -23,12 +27,22 @@ public class CommonConfiguration {
         return MessageWindowChatMemory.builder().maxMessages(10).build();
     }
 
+    @Bean
+    public ChatClient chatClient(OllamaChatModel model, ChatClientFactory chatClientFactory) {
+        return chatClientFactory.createChatClient(model, SYSTEM_PROMPT);
+    }
 
+    @Bean
+    public ChatClient gameChatClient(OpenAiChatModel model, ChatClientFactory chatClientFactory) {
+        return chatClientFactory.createChatClient(model, GAME_SYSTEM_PROMPT);
+    }
+
+    /*
     @Bean
     public ChatClient chatClient(OllamaChatModel model, ChatMemory chatMemory) {
         return ChatClient
                 .builder(model)
-                .defaultSystem("你是一个热心可爱的智能助手，你的名字叫小团团，请以小团团的语气和身份回答问题")
+                .defaultSystem(SYSTEM_PROMPT)
                 // 配置日志Advisor
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
@@ -36,4 +50,19 @@ public class CommonConfiguration {
                 )
                 .build();
     }
+
+
+    @Bean
+    public ChatClient gameChatClient(OpenAiChatModel model, ChatMemory chatMemory) {
+        return ChatClient
+                .builder(model)
+                .defaultSystem(GAME_SYSTEM_PROMPT)
+                // 配置日志Advisor
+                .defaultAdvisors(
+                        new SimpleLoggerAdvisor(),
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                )
+                .build();
+    }
+    */
 }

@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.awt.*;
+
 import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
 /**
@@ -33,8 +35,13 @@ public class ChatController {
         // 请求模型
         return chatClient.prompt()
                 .user(prompt)
-                .advisors(a -> a.param(CONVERSATION_ID, chatId))
+                // .advisors(a -> a.param(CONVERSATION_ID, chatId))
                 .stream()
                 .content();
+    }
+
+    @RequestMapping(value = "/hello", produces = "text/html;charset=utf-8")
+    public String chat() {
+        return "hello world!";
     }
 }

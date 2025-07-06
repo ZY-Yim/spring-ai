@@ -22,16 +22,28 @@ public class ServiceController {
     @Resource
     private ChatHistoryRepository chatHistoryRepository;
 
-    // 流式调用不兼容
+    // 流式调用不兼容，目前百炼已经修复了
+    // @RequestMapping(value = "/service", produces = "text/html;charset=utf-8")
+    // public String service(String prompt, String chatId) {
+    //     // 保存会话id
+    //     chatHistoryRepository.save("service", chatId);
+    //     // 请求模型
+    //     return serviceChatClient.prompt()
+    //             .user(prompt)
+    //             .advisors(a -> a.param(CONVERSATION_ID, chatId))
+    //             .call()
+    //             .content();
+    // }
+
     @RequestMapping(value = "/service", produces = "text/html;charset=utf-8")
-    public String service(String prompt, String chatId) {
+    public Flux<String> service(String prompt, String chatId) {
         // 保存会话id
         chatHistoryRepository.save("service", chatId);
         // 请求模型
         return serviceChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                .call()
+                .stream()
                 .content();
     }
 

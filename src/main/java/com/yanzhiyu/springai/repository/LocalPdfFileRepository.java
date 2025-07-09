@@ -5,6 +5,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -27,7 +28,10 @@ import java.util.Properties;
 public class LocalPdfFileRepository implements FileRepository {
 
     @jakarta.annotation.Resource
-    SimpleVectorStore vectorStore;
+    SimpleVectorStore simpleVectorStore;
+
+    @jakarta.annotation.Resource
+    RedisVectorStore redisVectorStore;
 
     // 会话id 与 文件名的对应关系，方便查询会话历史时重新加载文件
     // 自带持久化存储能力，重启还在
@@ -69,7 +73,7 @@ public class LocalPdfFileRepository implements FileRepository {
         }
         FileSystemResource vectorResource = new FileSystemResource("chat-pdf.json");
         if (vectorResource.exists()) {
-            SimpleVectorStore simpleVectorStore = (SimpleVectorStore) vectorStore;
+            // SimpleVectorStore simpleVectorStore = (SimpleVectorStore) simpleVectorStore;
             simpleVectorStore.load(vectorResource);
         }
     }
@@ -78,7 +82,7 @@ public class LocalPdfFileRepository implements FileRepository {
     private void persistent() {
         try {
             chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
-            SimpleVectorStore simpleVectorStore = (SimpleVectorStore) vectorStore;
+            // SimpleVectorStore simpleVectorStores = (SimpleVectorStore) simpleVectorStore;
             simpleVectorStore.save(new File("chat-pdf.json"));
         } catch (IOException e) {
             throw new RuntimeException(e);

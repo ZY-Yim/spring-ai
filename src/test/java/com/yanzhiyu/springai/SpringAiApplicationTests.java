@@ -28,7 +28,7 @@ class SpringAiApplicationTests {
     private OpenAiEmbeddingModel embeddingModel;
 
     @Autowired
-    // private RedisVectorStore redisVectorStore;
+    private RedisVectorStore redisVectorStore;
     private SimpleVectorStore simpleVectorStore;
 
     @Test
@@ -100,7 +100,7 @@ class SpringAiApplicationTests {
                 .topK(10)
                 .similarityThreshold(0.6)
                 // 加了会查不出来,redis内部把Metadata取消掉了，放到一个大json里，SimpleVectorStore可以查出来，还保存的
-                // .filterExpression("file_name == '中二知识笔记.pdf'")
+                .filterExpression("file_name == '中二知识笔记.pdf'")
                 .build();
         List<Document> docs = simpleVectorStore.similaritySearch(request);
         if (docs == null) {

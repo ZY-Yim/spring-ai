@@ -13,6 +13,7 @@ import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,9 @@ public class PdfController {
     SimpleVectorStore simpleVectorStore;
 
     @jakarta.annotation.Resource
+    RedisVectorStore redisVectorStore;
+
+    @jakarta.annotation.Resource
     ChatClient pdfChatClient;
 
     @jakarta.annotation.Resource
@@ -65,7 +69,7 @@ public class PdfController {
         return pdfChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + file.getFilename() + "'"))
+                // .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + file.getFilename() + "'"))
                 .stream()
                 .content();
     }

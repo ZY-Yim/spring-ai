@@ -40,7 +40,8 @@ public class CommonConfiguration {
         return MessageWindowChatMemory.builder().maxMessages(10).build();
     }
 
-    /*// 还不能用工厂生成，每个client的模式不一样
+    /*
+    // 还不能用工厂生成，每个client的模式不一样
     @Bean
     public ChatClient chatClient(OllamaChatModel model, ChatClientFactory chatClientFactory) {
         return chatClientFactory.createChatClient(model, SYSTEM_PROMPT);
@@ -49,11 +50,25 @@ public class CommonConfiguration {
     @Bean
     public ChatClient gameChatClient(OpenAiChatModel model, ChatClientFactory chatClientFactory) {
         return chatClientFactory.createChatClient(model, GAME_SYSTEM_PROMPT);
-    }*/
+    }
+
+    @Bean
+    public ChatClient chatClient(OpenAiChatModel model, ChatMemory chatMemory) {
+        return ChatClient
+                .builder(model)
+                .defaultSystem(SYSTEM_PROMPT)
+                // 配置日志Advisor
+                .defaultAdvisors(
+                        new SimpleLoggerAdvisor(),
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                )
+                .build();
+    }
+    */
 
 
     @Bean
-    public ChatClient chatClient(OllamaChatModel model, ChatMemory chatMemory) {
+    public ChatClient chatClient(OpenAiChatModel model, ChatMemory chatMemory) {
         return ChatClient
                 .builder(model)
                 .defaultSystem(SYSTEM_PROMPT)
@@ -122,14 +137,14 @@ public class CommonConfiguration {
     }
 
     // 不加的话会有两个EmbeddingModel Bean
-    @Bean
-    public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
-        return RedisVectorStore.builder(jedisPooled, model)
-                .prefix("doc:")
-                .initializeSchema(true)
-                .indexName("spring_ai_redis")
-                .build();
-    }
+    // @Bean
+    // public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
+    //     return RedisVectorStore.builder(jedisPooled, model)
+    //             .prefix("doc:")
+    //             .initializeSchema(true)
+    //             .indexName("spring_ai_redis")
+    //             .build();
+    // }
 
     @Bean
     public SimpleVectorStore simpleVectorStore(OpenAiEmbeddingModel model) {

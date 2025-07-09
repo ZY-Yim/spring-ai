@@ -73,7 +73,6 @@ public class LocalPdfFileRepository implements FileRepository {
         }
         FileSystemResource vectorResource = new FileSystemResource("chat-pdf.json");
         if (vectorResource.exists()) {
-            // SimpleVectorStore simpleVectorStore = (SimpleVectorStore) simpleVectorStore;
             simpleVectorStore.load(vectorResource);
         }
     }
@@ -82,7 +81,6 @@ public class LocalPdfFileRepository implements FileRepository {
     private void persistent() {
         try {
             chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
-            // SimpleVectorStore simpleVectorStores = (SimpleVectorStore) simpleVectorStore;
             simpleVectorStore.save(new File("chat-pdf.json"));
         } catch (IOException e) {
             throw new RuntimeException(e);

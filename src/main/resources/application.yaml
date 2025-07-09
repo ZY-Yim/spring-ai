@@ -1,15 +1,14 @@
 spring:
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+  autoconfigure:
+#    禁用ollama
+    exclude: org.springframework.ai.model.ollama.autoconfigure.OllamaEmbeddingAutoConfiguration
   application:
     name: spring-ai
   data:
     redis:
       host: localhost
       port: 6380
-#      url: redis://localhost:6380
+      url: redis://localhost:6380
   ai:
     ollama:
       base-url: http://localhost:11434
@@ -27,11 +26,11 @@ spring:
           model: text-embedding-v3
           dimensions: 1024
     # 以下配置未生效，手动@Bean里一个RedisVectorStore
-#    vectorstore:
-#      redis:
-#        index-name: spring_ai_redis
-#        initialize-schema: true
-#        prefix: "doc:"
+    vectorstore:
+      redis:
+        index-name: spring_ai_redis
+        initialize-schema: true
+        prefix: "doc:"
   devtools:
     restart:
       enabled: true

@@ -28,8 +28,8 @@ class SpringAiApplicationTests {
     private OpenAiEmbeddingModel embeddingModel;
 
     @Autowired
-    private RedisVectorStore vectorStore;
-    // private SimpleVectorStore vectorStore;
+    // private RedisVectorStore redisVectorStore;
+    private SimpleVectorStore simpleVectorStore;
 
     @Test
     void contextLoads() {
@@ -93,7 +93,7 @@ class SpringAiApplicationTests {
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
         // 3.写入向量库
-        vectorStore.add(documents);
+        simpleVectorStore.add(documents);
         // 4.搜索
         SearchRequest request = SearchRequest.builder()
                 .query("论语中教育的目的是什么")
@@ -102,7 +102,7 @@ class SpringAiApplicationTests {
                 // 加了会查不出来,redis内部把Metadata取消掉了，放到一个大json里，SimpleVectorStore可以查出来，还保存的
                 // .filterExpression("file_name == '中二知识笔记.pdf'")
                 .build();
-        List<Document> docs = vectorStore.similaritySearch(request);
+        List<Document> docs = simpleVectorStore.similaritySearch(request);
         if (docs == null) {
             System.out.println("没有搜索到任何内容");
             return;

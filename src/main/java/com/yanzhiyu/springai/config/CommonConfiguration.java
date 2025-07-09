@@ -1,17 +1,19 @@
 package com.yanzhiyu.springai.config;
 
 import com.yanzhiyu.springai.Tools.CourseTools;
+import com.yanzhiyu.springai.repository.MessageWindowChatMemoryRepository;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.ai.vectorstore.SimpleVectorStoreContent;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -91,6 +93,23 @@ public class CommonConfiguration {
                 .build();
     }
 
+    @Bean
+    public ChatClient pdfChatClient(OpenAiChatModel model, ChatMemory chatMemory, VectorStore simpleVectorStore) {
+        return ChatClient.builder(model)
+                .defaultSystem("请根据上下文回答问题，遇到上下文没有的问题，不要随意编造。")
+                .defaultAdvisors(
+                        new SimpleLoggerAdvisor(),
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
+                        QuestionAnswerAdvisor.builder(simpleVectorStore)
+                                .searchRequest(
+                                        SearchRequest.builder()
+                                                .topK(2)
+                                                .similarityThreshold(0.6)
+                                                .build()
+                                ).build())
+                .build();
+    }
+
     @Value("${spring.data.redis.host}")
     private String host;
 
@@ -102,9 +121,9 @@ public class CommonConfiguration {
         return new JedisPooled(host, port);
     }
 
-    // 不加点话会有两个EmbeddingModel Bean
+    // 不加的话会有两个EmbeddingModel Bean
     @Bean
-    public RedisVectorStore vectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
+    public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
         return RedisVectorStore.builder(jedisPooled, model)
                 .prefix("doc:")
                 .initializeSchema(true)

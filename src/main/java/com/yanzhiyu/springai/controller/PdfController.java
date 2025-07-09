@@ -1,0 +1,132 @@
+package com.yanzhiyu.springai.controller;
+
+import com.yanzhiyu.springai.entity.vo.Result;
+import com.yanzhiyu.springai.repository.ChatHistoryRepository;
+import com.yanzhiyu.springai.repository.FileRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.reader.ExtractedTextFormatter;
+import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
+
+import static org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor.FILTER_EXPRESSION;
+import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
+
+/**
+ * @author yanzhiyu
+ * @date 2025/7/6
+ */
+@Slf4j
+// @RequiredArgsConstructor
+@RestController
+@RequestMapping("/ai/pdf")
+public class PdfController {
+
+    @jakarta.annotation.Resource
+    FileRepository fileRepository;
+
+    @jakarta.annotation.Resource
+    SimpleVectorStore simpleVectorStore;
+
+    @jakarta.annotation.Resource
+    ChatClient pdfChatClient;
+
+    @jakarta.annotation.Resource
+    ChatHistoryRepository chatHistoryRepository;
+
+
+    @RequestMapping(value = "/chat", produces = "text/html;charset=utf-8")
+    public Flux<String> chat(String prompt, String chatId) {
+        // 找到会话文件
+        Resource file = fileRepository.getFile(chatId);
+        if (file == null) {
+            throw new RuntimeException("文件不存在！");
+        }
+        // 保存会话id
+        chatHistoryRepository.save("pdf", chatId);
+        // 请求模型
+        return pdfChatClient.prompt()
+                .user(prompt)
+                .advisors(a -> a.param(CONVERSATION_ID, chatId))
+                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + file.getFilename() + "'"))
+                .stream()
+                .content();
+    }
+
+    /**
+     * 文件上传
+     */
+    @RequestMapping("/upload/{chatId}")
+    public Result uploadPdf(@PathVariable String chatId, @RequestParam("file") MultipartFile file) {
+        try {
+            // 1. 校验文件是否为PDF格式
+            if (!Objects.equals(file.getContentType(), "application/pdf")) {
+                return Result.fail("只能上传PDF文件！");
+            }
+            // 2.保存文件
+            boolean success = fileRepository.save(chatId, file.getResource());
+            if (!success) {
+                return Result.fail("保存文件失败！");
+            }
+            // 3.写入向量库
+            this.writeToVectorStore(file.getResource());
+            return Result.ok();
+        } catch (Exception e) {
+            log.error("Failed to upload PDF.", e);
+            return Result.fail("上传文件失败！");
+        }
+    }
+
+    /**
+     * 文件下载
+     */
+    @GetMapping("/file/{chatId}")
+    public ResponseEntity<Resource> download(@PathVariable("chatId") String chatId) throws IOException {
+        // 1.读取文件
+        Resource resource = fileRepository.getFile(chatId);
+        if (!resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        // 2.文件名编码，写入响应头
+        String filename = URLEncoder.encode(Objects.requireNonNull(resource.getFilename()), StandardCharsets.UTF_8);
+        // 3.返回文件
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(resource);
+    }
+
+    private void writeToVectorStore(Resource resource) {
+        // 1.创建PDF的读取器
+        PagePdfDocumentReader reader = new PagePdfDocumentReader(
+                // 文件源
+                resource,
+                PdfDocumentReaderConfig.builder()
+                        .withPageExtractedTextFormatter(ExtractedTextFormatter.defaults())
+                        // 每1页PDF作为一个Document
+                        .withPagesPerDocument(1)
+                        .build()
+        );
+        // 2.读取PDF文档，拆分为Document
+        List<Document> documents = reader.read();
+        // 3.写入向量库
+        simpleVectorStore.add(documents);
+    }
+}

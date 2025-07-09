@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   application:
     name: spring-ai
   data:
@@ -23,11 +27,11 @@ spring:
           model: text-embedding-v3
           dimensions: 1024
     # 以下配置未生效，手动@Bean里一个RedisVectorStore
-    vectorstore:
-      redis:
-        index-name: spring_ai_redis
-        initialize-schema: true
-        prefix: "doc:"
+#    vectorstore:
+#      redis:
+#        index-name: spring_ai_redis
+#        initialize-schema: true
+#        prefix: "doc:"
   devtools:
     restart:
       enabled: true

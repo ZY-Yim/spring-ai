@@ -1,7 +1,9 @@
 package com.yanzhiyu.springai.config;
 
 import com.yanzhiyu.springai.Tools.CourseTools;
+import com.yanzhiyu.springai.model.AlibabaOpenAiChatModel;
 import com.yanzhiyu.springai.repository.MessageWindowChatMemoryRepository;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -9,19 +11,36 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.observation.ChatModelObservationConvention;
+import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.model.SimpleApiKey;
+import org.springframework.ai.model.openai.autoconfigure.OpenAiChatProperties;
+import org.springframework.ai.model.openai.autoconfigure.OpenAiConnectionProperties;
+import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 import redis.clients.jedis.JedisPooled;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static com.yanzhiyu.springai.constants.SystemConstants.*;
 
@@ -67,10 +86,12 @@ public class CommonConfiguration {
     */
 
 
+    // 改造，支持多模态
     @Bean
-    public ChatClient chatClient(OpenAiChatModel model, ChatMemory chatMemory) {
+    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory) {
         return ChatClient
                 .builder(model)
+                .defaultOptions(ChatOptions.builder().model("qwen-omni-turbo").build())
                 .defaultSystem(SYSTEM_PROMPT)
                 // 配置日志Advisor
                 .defaultAdvisors(
@@ -95,6 +116,7 @@ public class CommonConfiguration {
     }
 
 
+    // 1.0.0-M6 存在不兼容问题，1.0.0 已经解决
     @Bean
     public ChatClient serviceChatClient(OpenAiChatModel model, ChatMemory chatMemory) {
         return ChatClient.builder(model)
@@ -144,6 +166,7 @@ public class CommonConfiguration {
                 .prefix("doc:")
                 .initializeSchema(true)
                 .indexName("spring_ai_redis")
+                // 加了也解决不了
                 .metadataFields(                         // Optional: define metadata fields for filtering
                         RedisVectorStore.MetadataField.tag("file_name")
                 )
@@ -154,5 +177,29 @@ public class CommonConfiguration {
     public SimpleVectorStore simpleVectorStore(OpenAiEmbeddingModel model) {
         return SimpleVectorStore.builder(model)
                 .build();
+    }
+
+
+    @Bean
+    public AlibabaOpenAiChatModel alibabaOpenAiChatModel(OpenAiConnectionProperties commonProperties, OpenAiChatProperties chatProperties, ObjectProvider<RestClient.Builder> restClientBuilderProvider, ObjectProvider<WebClient.Builder> webClientBuilderProvider, ToolCallingManager toolCallingManager, RetryTemplate retryTemplate, ResponseErrorHandler responseErrorHandler, ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<ChatModelObservationConvention> observationConvention) {
+        String baseUrl = StringUtils.hasText(chatProperties.getBaseUrl()) ? chatProperties.getBaseUrl() : commonProperties.getBaseUrl();
+        String apiKey = StringUtils.hasText(chatProperties.getApiKey()) ? chatProperties.getApiKey() : commonProperties.getApiKey();
+        String projectId = StringUtils.hasText(chatProperties.getProjectId()) ? chatProperties.getProjectId() : commonProperties.getProjectId();
+        String organizationId = StringUtils.hasText(chatProperties.getOrganizationId()) ? chatProperties.getOrganizationId() : commonProperties.getOrganizationId();
+        Map<String, List<String>> connectionHeaders = new HashMap<>();
+        if (StringUtils.hasText(projectId)) {
+            connectionHeaders.put("OpenAI-Project", List.of(projectId));
+        }
+
+        if (StringUtils.hasText(organizationId)) {
+            connectionHeaders.put("OpenAI-Organization", List.of(organizationId));
+        }
+        RestClient.Builder restClientBuilder = restClientBuilderProvider.getIfAvailable(RestClient::builder);
+        WebClient.Builder webClientBuilder = webClientBuilderProvider.getIfAvailable(WebClient::builder);
+        OpenAiApi openAiApi = OpenAiApi.builder().baseUrl(baseUrl).apiKey(new SimpleApiKey(apiKey)).headers(CollectionUtils.toMultiValueMap(connectionHeaders)).completionsPath(chatProperties.getCompletionsPath()).embeddingsPath("/v1/embeddings").restClientBuilder(restClientBuilder).webClientBuilder(webClientBuilder).responseErrorHandler(responseErrorHandler).build();
+        AlibabaOpenAiChatModel chatModel = AlibabaOpenAiChatModel.builder().openAiApi(openAiApi).defaultOptions(chatProperties.getOptions()).toolCallingManager(toolCallingManager).retryTemplate(retryTemplate).observationRegistry((ObservationRegistry)observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP)).build();
+        Objects.requireNonNull(chatModel);
+        observationConvention.ifAvailable(chatModel::setObservationConvention);
+        return chatModel;
     }
 }

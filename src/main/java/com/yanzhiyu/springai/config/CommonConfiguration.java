@@ -136,15 +136,19 @@ public class CommonConfiguration {
         return new JedisPooled(host, port);
     }
 
-    // 不加的话会有两个EmbeddingModel Bean
-    // @Bean
-    // public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
-    //     return RedisVectorStore.builder(jedisPooled, model)
-    //             .prefix("doc:")
-    //             .initializeSchema(true)
-    //             .indexName("spring_ai_redis")
-    //             .build();
-    // }
+    // 不加的话会有两个EmbeddingModel Bean，可以通过禁用ollama解决
+    // 要新增MetadataFields，必须通过自定义Bean
+    @Bean
+    public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
+        return RedisVectorStore.builder(jedisPooled, model)
+                .prefix("doc:")
+                .initializeSchema(true)
+                .indexName("spring_ai_redis")
+                .metadataFields(                         // Optional: define metadata fields for filtering
+                        RedisVectorStore.MetadataField.tag("file_name")
+                )
+                .build();
+    }
 
     @Bean
     public SimpleVectorStore simpleVectorStore(OpenAiEmbeddingModel model) {

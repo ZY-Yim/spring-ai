@@ -29,6 +29,8 @@ class SpringAiApplicationTests {
 
     @Autowired
     private RedisVectorStore redisVectorStore;
+
+    @Autowired
     private SimpleVectorStore simpleVectorStore;
 
     @Test

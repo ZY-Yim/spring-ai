@@ -15,10 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.Query;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 class SpringAiApplicationTests {
@@ -95,16 +102,16 @@ class SpringAiApplicationTests {
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
         // 3.写入向量库
-        simpleVectorStore.add(documents);
+        redisVectorStore.add(documents);
         // 4.搜索
         SearchRequest request = SearchRequest.builder()
                 .query("论语中教育的目的是什么")
                 .topK(10)
                 .similarityThreshold(0.6)
                 // 加了会查不出来,redis内部把Metadata取消掉了，放到一个大json里，SimpleVectorStore可以查出来，还保存的
-                .filterExpression("file_name == '中二知识笔记.pdf'")
+                .filterExpression("file_name == '中二知识笔记\\.pdf'")
                 .build();
-        List<Document> docs = simpleVectorStore.similaritySearch(request);
+        List<Document> docs = redisVectorStore.similaritySearch(request);
         if (docs == null) {
             System.out.println("没有搜索到任何内容");
             return;

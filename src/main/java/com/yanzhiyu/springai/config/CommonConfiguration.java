@@ -132,17 +132,17 @@ public class CommonConfiguration {
     }
 
     @Bean
-    public ChatClient pdfChatClient(OpenAiChatModel model, ChatMemory chatMemory, VectorStore simpleVectorStore) {
+    public ChatClient pdfChatClient(OpenAiChatModel model, ChatMemory chatMemory, VectorStore redisVectorStore) {
         return ChatClient.builder(model)
                 .defaultSystem("请根据上下文回答问题，遇到上下文没有的问题，不要随意编造。")
                 .defaultAdvisors(
                         new SimpleLoggerAdvisor(),
                         MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        QuestionAnswerAdvisor.builder(simpleVectorStore)
+                        QuestionAnswerAdvisor.builder(redisVectorStore)
                                 .searchRequest(
                                         SearchRequest.builder()
                                                 .topK(2)
-                                                .similarityThreshold(0.6)
+                                                .similarityThreshold(0.8)
                                                 .build()
                                 ).build())
                 .build();
@@ -165,12 +165,12 @@ public class CommonConfiguration {
     public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
         return RedisVectorStore.builder(jedisPooled, model)
                 .prefix("doc:")
-                .initializeSchema(true)
+                .initializeSchema(false)
                 .indexName("spring_ai_redis")
-                // 加了也解决不了
-                .metadataFields(                         // Optional: define metadata fields for filtering
-                        RedisVectorStore.MetadataField.tag("file_name")
-                )
+                // // 加了也解决不了
+                // .metadataFields(                         // Optional: define metadata fields for filtering
+                //         RedisVectorStore.MetadataField.tag("file_name")
+                // )
                 .build();
     }
 

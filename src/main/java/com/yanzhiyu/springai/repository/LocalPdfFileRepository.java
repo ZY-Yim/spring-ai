@@ -61,29 +61,29 @@ public class LocalPdfFileRepository implements FileRepository {
         return new FileSystemResource(chatFiles.getProperty(chatId));
     }
 
-    @PostConstruct
-    private void init() {
-        FileSystemResource pdfResource = new FileSystemResource("chat-pdf.properties");
-        if (pdfResource.exists()) {
-            try {
-                chatFiles.load(new BufferedReader(new InputStreamReader(pdfResource.getInputStream(), StandardCharsets.UTF_8)));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        FileSystemResource vectorResource = new FileSystemResource("chat-pdf.json");
-        if (vectorResource.exists()) {
-            simpleVectorStore.load(vectorResource);
-        }
-    }
-
-    @PreDestroy
-    private void persistent() {
-        try {
-            chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
-            simpleVectorStore.save(new File("chat-pdf.json"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    // @PostConstruct
+    // private void init() {
+    //     FileSystemResource pdfResource = new FileSystemResource("chat-pdf.properties");
+    //     if (pdfResource.exists()) {
+    //         try {
+    //             chatFiles.load(new BufferedReader(new InputStreamReader(pdfResource.getInputStream(), StandardCharsets.UTF_8)));
+    //         } catch (IOException e) {
+    //             throw new RuntimeException(e);
+    //         }
+    //     }
+    //     FileSystemResource vectorResource = new FileSystemResource("chat-pdf.json");
+    //     if (vectorResource.exists()) {
+    //         simpleVectorStore.load(vectorResource);
+    //     }
+    // }
+    //
+    // @PreDestroy
+    // private void persistent() {
+    //     try {
+    //         chatFiles.store(new FileWriter("chat-pdf.properties"), LocalDateTime.now().toString());
+    //         simpleVectorStore.save(new File("chat-pdf.json"));
+    //     } catch (IOException e) {
+    //         throw new RuntimeException(e);
+    //     }
+    // }
 }

@@ -69,7 +69,7 @@ public class PdfController {
         return pdfChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                // .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + file.getFilename() + "'"))
+                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + Objects.requireNonNull(file.getFilename()).replace(".", "\\.") + "'"))
                 .stream()
                 .content();
     }
@@ -131,6 +131,6 @@ public class PdfController {
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
         // 3.写入向量库
-        simpleVectorStore.add(documents);
+        redisVectorStore.add(documents);
     }
 }

@@ -3,6 +3,7 @@ package com.yanzhiyu.springai.config;
 import com.yanzhiyu.springai.Tools.CourseTools;
 import com.yanzhiyu.springai.model.AlibabaOpenAiChatModel;
 import com.yanzhiyu.springai.repository.MessageWindowChatMemoryRepository;
+import com.yanzhiyu.springai.repository.RedisChatMemory;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
@@ -54,10 +55,10 @@ public class CommonConfiguration {
     @Resource
     private CourseTools courseTools;
 
-    @Bean
-    public ChatMemory chatMemory() {
-        return MessageWindowChatMemory.builder().maxMessages(10).build();
-    }
+    // @Bean
+    // public ChatMemory chatMemory() {
+    //     return MessageWindowChatMemory.builder().maxMessages(10).build();
+    // }
 
     /*
     // 还不能用工厂生成，每个client的模式不一样
@@ -88,7 +89,7 @@ public class CommonConfiguration {
 
     // 改造，支持多模态
     @Bean
-    public ChatClient chatClient(AlibabaOpenAiChatModel model, ChatMemory chatMemory) {
+    public ChatClient chatClient(AlibabaOpenAiChatModel model, RedisChatMemory chatMemory) {
         return ChatClient
                 .builder(model)
                 .defaultOptions(ChatOptions.builder().model("qwen-omni-turbo").build())

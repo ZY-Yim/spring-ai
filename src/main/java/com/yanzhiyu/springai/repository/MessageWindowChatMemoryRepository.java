@@ -11,7 +11,7 @@ import java.util.Map;
  * @author yanzhiyu
  * @date 2025/7/5
  */
-@Component
+// @Component
 public class MessageWindowChatMemoryRepository implements ChatHistoryRepository {
 
     private final Map<String, List<String>> chatHistory = new HashMap<>();

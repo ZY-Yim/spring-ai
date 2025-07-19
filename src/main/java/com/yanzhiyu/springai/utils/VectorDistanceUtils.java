@@ -1,4 +1,4 @@
-package com.yanzhiyu.springai.util;
+package com.yanzhiyu.springai.utils;
 
 /**
  * @author yanzhiyu

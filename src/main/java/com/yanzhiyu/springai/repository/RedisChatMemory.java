@@ -37,6 +37,8 @@ public class RedisChatMemory implements ChatMemory {
         if (messages == null || messages.isEmpty()) {
             return;
         }
+
+        // 1. 将消息转换为 JSON 字符串
         List<String> list = messages.stream().map(Msg::new).map(msg -> {
             try {
                 return objectMapper.writeValueAsString(msg);
@@ -44,7 +46,13 @@ public class RedisChatMemory implements ChatMemory {
                 throw new RuntimeException(e);
             }
         }).toList();
+
+        // 2. 将新消息批量插入 Redis List 左侧（最新消息在前）
         redisTemplate.opsForList().leftPushAll(PREFIX + conversationId, list);
+
+        // 3. 只保留最近20条消息（截断列表）
+        redisTemplate.opsForList().trim(PREFIX + conversationId, 0, DEFAULT_MAX_MESSAGES - 1);
+
     }
 
     /**

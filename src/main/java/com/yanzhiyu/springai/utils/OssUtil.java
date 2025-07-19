@@ -2,7 +2,6 @@ package com.yanzhiyu.springai.utils;
 
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
 import lombok.AllArgsConstructor;

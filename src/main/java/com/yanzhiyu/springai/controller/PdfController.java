@@ -15,6 +15,7 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +64,9 @@ public class PdfController {
         // InputStreamResource 类型，它默认不会携带文件名信息
         // Resource file = fileRepository.getFile(chatId);
         String uniqueFileName = fileRepository.getUniqueFileName(chatId);
+        if (uniqueFileName.isEmpty()) {
+            return Flux.just("请上传PDF文件！");
+        }
         // 保存会话id
         chatHistoryRepository.save("pdf", chatId);
         // 请求模型

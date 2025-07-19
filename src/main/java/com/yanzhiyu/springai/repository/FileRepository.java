@@ -9,16 +9,34 @@ import org.springframework.core.io.Resource;
 public interface FileRepository {
     /**
      * 保存文件,还要记录chatId与文件的映射关系
-     * @param chatId 会话id
+     *
+     * @param chatId   会话id
      * @param resource 文件
-     * @return 上传成功，返回true； 否则返回false
+     * @return 返回唯一一个文件名
      */
-    boolean save(String chatId, Resource resource);
+    String save(String chatId, Resource resource);
 
     /**
      * 根据chatId获取文件
+     *
      * @param chatId 会话id
      * @return 找到的文件
      */
     Resource getFile(String chatId);
+
+    /**
+     * 获取原始文件名
+     *
+     * @param chatId 会话id
+     * @return 文件名
+     */
+    String getEncodeFileName(String chatId);
+
+    /**
+     * 获取唯一文件名
+     *
+     * @param chatId 会话id
+     * @return 文件名
+     */
+    String getUniqueFileName(String chatId);
 }

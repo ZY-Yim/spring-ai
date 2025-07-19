@@ -14,6 +14,7 @@ import org.springframework.ai.reader.pdf.config.PdfDocumentReaderConfig;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,18 +59,17 @@ public class PdfController {
 
     @RequestMapping(value = "/chat", produces = "text/html;charset=utf-8")
     public Flux<String> chat(String prompt, String chatId) {
-        // 找到会话文件
-        Resource file = fileRepository.getFile(chatId);
-        if (file == null) {
-            throw new RuntimeException("文件不存在！");
-        }
+        // 找到会话文件名
+        // InputStreamResource 类型，它默认不会携带文件名信息
+        // Resource file = fileRepository.getFile(chatId);
+        String uniqueFileName = fileRepository.getUniqueFileName(chatId);
         // 保存会话id
         chatHistoryRepository.save("pdf", chatId);
         // 请求模型
         return pdfChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + Objects.requireNonNull(file.getFilename()).replace(".", "\\.") + "'"))
+                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + fileName.replace(".", "\\.") + "'"))
                 .stream()
                 .content();
     }
@@ -85,12 +85,12 @@ public class PdfController {
                 return Result.fail("只能上传PDF文件！");
             }
             // 2.保存文件
-            boolean success = fileRepository.save(chatId, file.getResource());
-            if (!success) {
+            String uniqueFileName = fileRepository.save(chatId, file.getResource());
+            if (uniqueFileName.isEmpty()) {
                 return Result.fail("保存文件失败！");
             }
             // 3.写入向量库
-            this.writeToVectorStore(file.getResource());
+            this.writeToVectorStore(file.getResource(), uniqueFileName);
             return Result.ok();
         } catch (Exception e) {
             log.error("Failed to upload PDF.", e);
@@ -108,16 +108,19 @@ public class PdfController {
         if (!resource.exists()) {
             return ResponseEntity.notFound().build();
         }
+
         // 2.文件名编码，写入响应头
-        String filename = URLEncoder.encode(Objects.requireNonNull(resource.getFilename()), StandardCharsets.UTF_8);
+        // save的时候已经编码了
+        String encodeFileName = fileRepository.getEncodeFileName(chatId);
+        // String encodeFileName = URLEncoder.encode(Objects.requireNonNull(fileName), StandardCharsets.UTF_8);
         // 3.返回文件
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .header("Content-Disposition", "attachment; filename=\"" + encodeFileName + "\"")
                 .body(resource);
     }
 
-    private void writeToVectorStore(Resource resource) {
+    private void writeToVectorStore(Resource resource, String uniqueFileName) {
         // 1.创建PDF的读取器
         PagePdfDocumentReader reader = new PagePdfDocumentReader(
                 // 文件源
@@ -130,6 +133,7 @@ public class PdfController {
         );
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
+        documents.forEach(doc -> doc.getMetadata().put("unique_file_name", uniqueFileName));
         // 3.写入向量库
         redisVectorStore.add(documents);
     }

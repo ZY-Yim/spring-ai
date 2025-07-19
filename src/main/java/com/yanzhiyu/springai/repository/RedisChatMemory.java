@@ -1,14 +1,20 @@
 package com.yanzhiyu.springai.repository;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yanzhiyu.springai.entity.dto.MsgDTO;
+import com.yanzhiyu.springai.mq.MsgProducerService;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.yanzhiyu.springai.entity.pojo.Msg;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -26,6 +32,9 @@ public class RedisChatMemory implements ChatMemory {
     private final ObjectMapper objectMapper;
 
     private final static String PREFIX = "chat:";
+
+    @Resource
+    private MsgProducerService msgProducerService;
 
     /**
      * 添加消息
@@ -53,6 +62,14 @@ public class RedisChatMemory implements ChatMemory {
         // 3. 只保留最近20条消息（截断列表）
         redisTemplate.opsForList().trim(PREFIX + conversationId, 0, DEFAULT_MAX_MESSAGES - 1);
 
+        // 4. 发送到消息队列
+        MsgDTO msgDTO = new MsgDTO();
+        msgDTO.setChatId(conversationId);
+        msgDTO.setCreateTime(LocalDateTime.now());
+        msgDTO.setMessageType(messages.get(0).getMessageType().getValue());
+        msgDTO.setText(messages.get(0).getText());
+        msgDTO.setMetadata(JSON.toJSONString(messages.get(0).getMetadata()));
+        msgProducerService.sendMessage(msgDTO);
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.yanzhiyu.springai.entity.query;
+package com.yanzhiyu.springai.query;
 
 import lombok.Data;
 import org.springframework.ai.tool.annotation.ToolParam;

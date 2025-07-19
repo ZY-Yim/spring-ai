@@ -17,12 +17,17 @@ import java.util.Map;
  */
 @Data
 public class Msg implements Serializable {
-    MessageType messageType;
-    String text;
-    Map<String, Object> metadata;
+    private static final long serialVersionUID = 1L;
+
+    private MessageType messageType;
+
+    private String text;
+
+    private Map<String, Object> metadata;
 
     public Msg() {
     }
+
 
     public Msg(Message message) {
         this.messageType = message.getMessageType();

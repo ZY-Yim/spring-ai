@@ -1,6 +1,7 @@
 package com.yanzhiyu.springai.config;
 
 import com.yanzhiyu.springai.Tools.CourseTools;
+import com.yanzhiyu.springai.entity.dto.MsgDTO;
 import com.yanzhiyu.springai.model.AlibabaOpenAiChatModel;
 import com.yanzhiyu.springai.repository.MessageWindowChatMemoryRepository;
 import com.yanzhiyu.springai.repository.RedisChatMemory;
@@ -30,7 +31,9 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.ResponseErrorHandler;
@@ -205,5 +208,4 @@ public class CommonConfiguration {
         observationConvention.ifAvailable(chatModel::setObservationConvention);
         return chatModel;
     }
-
 }

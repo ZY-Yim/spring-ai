@@ -1,11 +1,10 @@
 package com.yanzhiyu.springai.Tools;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.QueryChainWrapper;
 import com.yanzhiyu.springai.entity.pojo.Course;
 import com.yanzhiyu.springai.entity.pojo.CourseReservation;
 import com.yanzhiyu.springai.entity.pojo.School;
-import com.yanzhiyu.springai.entity.query.CourseQuery;
+import com.yanzhiyu.springai.query.CourseQuery;
 import com.yanzhiyu.springai.service.ICourseReservationService;
 import com.yanzhiyu.springai.service.ICourseService;
 import com.yanzhiyu.springai.service.ISchoolService;

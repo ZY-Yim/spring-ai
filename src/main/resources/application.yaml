@@ -26,11 +26,11 @@ spring:
           model: text-embedding-v3
           dimensions: 1024
     # 以下配置未生效，手动@Bean里一个RedisVectorStore
-    vectorstore:
-      redis:
-        index-name: spring_ai_redis
-        initialize-schema: true
-        prefix: "doc:"
+#    vectorstore:
+#      redis:
+#        index-name: spring_ai_redis
+#        initialize-schema: true
+#        prefix: "doc:"
   devtools:
     restart:
       enabled: true
@@ -39,6 +39,12 @@ spring:
     url: jdbc:mysql://localhost:3306/itheima?serverTimezone=Asia/Shanghai&useSSL=false&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&tinyInt1isBit=false&allowPublicKeyRetrieval=true&allowMultiQueries=true&useServerPrepStmts=false
     username: root
     password: 12345678
+  oss:
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    accessKeyId: ${OSS_KEY}
+    accessKeySecret: ${OSS_SECRET}
+    bucketName: yzy-ucket
+    fileHost: springai/pdf
 logging:
   level:
     org.springframework.ai.chat.client.advisor: debug

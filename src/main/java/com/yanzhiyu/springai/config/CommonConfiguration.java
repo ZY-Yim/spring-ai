@@ -165,12 +165,14 @@ public class CommonConfiguration {
     public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
         return RedisVectorStore.builder(jedisPooled, model)
                 .prefix("doc:")
-                .initializeSchema(false)
+                .initializeSchema(true)
                 .indexName("spring_ai_redis")
-                // // 加了也解决不了
-                // .metadataFields(                         // Optional: define metadata fields for filtering
-                //         RedisVectorStore.MetadataField.tag("file_name")
-                // )
+                .metadataFields(
+                        // 定义为 TAG 类型
+                        RedisVectorStore.MetadataField.tag("file_name"),
+                        // 其他需要的字段...
+                        RedisVectorStore.MetadataField.tag("unique_file_name")
+                )
                 .build();
     }
 
@@ -203,4 +205,5 @@ public class CommonConfiguration {
         observationConvention.ifAvailable(chatModel::setObservationConvention);
         return chatModel;
     }
+
 }

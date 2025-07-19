@@ -101,14 +101,14 @@ class SpringAiApplicationTests {
         );
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
+        // documents.forEach(doc -> doc.getMetadata().put("unique_file_name", "abc"));
         // 3.写入向量库
         redisVectorStore.add(documents);
         // 4.搜索
         SearchRequest request = SearchRequest.builder()
-                .query("论语中教育的目的是什么")
+                .query("教育的定义")
                 .topK(10)
                 .similarityThreshold(0.6)
-                // 加了会查不出来,redis内部把Metadata取消掉了，放到一个大json里，SimpleVectorStore可以查出来，还保存的
                 .filterExpression("file_name == '中二知识笔记\\.pdf'")
                 .build();
         List<Document> docs = redisVectorStore.similaritySearch(request);

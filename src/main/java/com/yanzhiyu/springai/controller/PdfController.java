@@ -69,7 +69,7 @@ public class PdfController {
         return pdfChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                .advisors(a -> a.param(FILTER_EXPRESSION, "file_name == '" + fileName.replace(".", "\\.") + "'"))
+                .advisors(a -> a.param(FILTER_EXPRESSION, "unique_file_name == '" + uniqueFileName.replace(".", "\\.") + "'"))
                 .stream()
                 .content();
     }

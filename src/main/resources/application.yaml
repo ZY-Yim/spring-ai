@@ -1,3 +1,4 @@
+
 spring:
   autoconfigure:
 #    禁用ollama
@@ -49,3 +50,6 @@ logging:
   level:
     org.springframework.ai.chat.client.advisor: debug
     com.yanzhiyu.springai: debug
+
+server:
+  port: 8080

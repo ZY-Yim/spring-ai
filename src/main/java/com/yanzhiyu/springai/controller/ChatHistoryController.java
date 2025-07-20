@@ -2,6 +2,7 @@ package com.yanzhiyu.springai.controller;
 
 import com.yanzhiyu.springai.entity.vo.MessageVO;
 import com.yanzhiyu.springai.repository.ChatHistoryRepository;
+import com.yanzhiyu.springai.repository.RedisChatMemory;
 import jakarta.annotation.Resource;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
@@ -23,7 +24,7 @@ public class ChatHistoryController {
     ChatHistoryRepository chatHistoryRepository;
 
     @Resource
-    ChatMemory chatMemory;
+    RedisChatMemory redisChatMemory;
 
     @RequestMapping("/{type}")
     public List<String> getChatIds(@PathVariable("type") String type) {
@@ -32,7 +33,7 @@ public class ChatHistoryController {
 
     @RequestMapping("/{type}/{chatId}")
     public List<MessageVO> getHistory(@PathVariable("type") String type, @PathVariable("chatId") String chatId) {
-        List<Message> messages = chatMemory.get(chatId);
+        List<Message> messages = redisChatMemory.getAll(chatId);
         if (messages == null) {
             return List.of();
         }

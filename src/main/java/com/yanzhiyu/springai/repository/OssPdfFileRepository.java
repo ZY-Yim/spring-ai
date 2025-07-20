@@ -1,14 +1,9 @@
 package com.yanzhiyu.springai.repository;
 
-import com.aliyun.oss.OSS;
 import com.yanzhiyu.springai.utils.OssUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.FileCopyUtils;
@@ -17,7 +12,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -27,15 +21,15 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class OssPdfFileRepository implements FileRepository{
+public class OssPdfFileRepository implements FileRepository {
 
-    @Autowired
+    private static final String CHAT_FILE_KEY_PREFIX = "chat:pdf:";
+
+    @jakarta.annotation.Resource
     private OssUtil ossUtil;
 
-    private final StringRedisTemplate redisTemplate;
-
-    private final static String CHAT_FILE_KEY_PREFIX = "chat:pdf:";
+    @jakarta.annotation.Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public String save(String chatId, Resource resource) {
@@ -53,8 +47,8 @@ public class OssPdfFileRepository implements FileRepository{
 
             // 使用 Redis Hash 存储原始文件名和编码后的文件名
             String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-            redisTemplate.opsForHash().put(redisKey, "uniqueFilename", uniqueFilename);
-            redisTemplate.opsForHash().put(redisKey, "encodeFileName", encodeFilename);
+            stringRedisTemplate.opsForHash().put(redisKey, "uniqueFilename", uniqueFilename);
+            stringRedisTemplate.opsForHash().put(redisKey, "encodeFileName", encodeFilename);
 
             return uniqueFilename;
         } catch (IOException e) {
@@ -78,7 +72,7 @@ public class OssPdfFileRepository implements FileRepository{
     @Override
     public String getEncodeFileName(String chatId) {
         String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-        Object encodedFilename = redisTemplate.opsForHash().get(redisKey, "encodeFileName");
+        Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "encodeFileName");
         if (encodedFilename == null) {
             throw new RuntimeException("File not found for chatId: " + chatId);
         }
@@ -88,7 +82,7 @@ public class OssPdfFileRepository implements FileRepository{
     @Override
     public String getUniqueFileName(String chatId) {
         String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-        Object encodedFilename = redisTemplate.opsForHash().get(redisKey, "uniqueFilename");
+        Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "uniqueFilename");
         if (encodedFilename == null) {
             throw new RuntimeException("File not found for chatId: " + chatId);
         }

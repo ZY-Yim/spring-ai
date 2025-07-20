@@ -11,4 +11,9 @@
             #{metadata}
         )
     </insert>
+
+    <select id="getMsgList" resultType="com.yanzhiyu.springai.entity.dto.MsgDTO">
+        SELECT * FROM messages WHERE chat_id = #{chatId}
+    </select>
+
 </mapper>

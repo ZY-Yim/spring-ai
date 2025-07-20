@@ -37,7 +37,6 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
  * @date 2025/7/6
  */
 @Slf4j
-// @RequiredArgsConstructor
 @RestController
 @RequestMapping("/ai/pdf")
 public class PdfController {

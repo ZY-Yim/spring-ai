@@ -138,6 +138,7 @@ public class RedisChatMemory implements ChatMemory {
         }).toList();
         // 写入redis
         stringRedisTemplate.opsForList().leftPushAll(PREFIX + conversationId, list);
+        stringRedisTemplate.expire(PREFIX + conversationId, 30, TimeUnit.MINUTES);
         return messages;
     }
 

@@ -62,6 +62,7 @@ public class RedisChatHistory implements ChatHistoryRepository {
 
         // 写入redis
         stringRedisTemplate.opsForSet().add(CHAT_HISTORY_KEY_PREFIX + type, list.toArray(new String[0]));
+        stringRedisTemplate.expire(CHAT_HISTORY_KEY_PREFIX + type, 30, TimeUnit.MINUTES);
         return list;
     }
 }

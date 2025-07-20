@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yanzhiyu.springai.mapper.PdfFileMapper">
+    <insert id="insert" parameterType="com.yanzhiyu.springai.entity.dto.PdfFileDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO pdf_file(chat_id, create_time, update_time, unique_file_name, encode_file_name)
+        VALUES (#{chatId},
+                #{createTime},
+                #{updateTime},
+                #{uniqueFileName},
+                #{encodeFileName})
+    </insert>
+
+    <select id="getPdfFile" parameterType="String" resultType="com.yanzhiyu.springai.entity.dto.PdfFileDTO">
+        SELECT * FROM pdf_file WHERE chat_id = #{chatId}
+    </select>
+
+    <update id="update" parameterType="com.yanzhiyu.springai.entity.dto.PdfFileDTO">
+        UPDATE pdf_file
+        SET update_time = #{updateTime},
+            unique_file_name = #{uniqueFileName},
+            encode_file_name = #{encodeFileName}
+        WHERE chat_id = #{chatId}
+    </update>
+
+</mapper>

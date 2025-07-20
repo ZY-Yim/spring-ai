@@ -66,8 +66,8 @@ public class PdfController {
         if (uniqueFileName.isEmpty()) {
             return Flux.just("请上传PDF文件！");
         }
-        // 保存会话id
-        chatHistoryRepository.save("pdf", chatId);
+        // 保存会话id，上传文件的时候已经写入了，这里不需要再写入了
+        // chatHistoryRepository.save("pdf", chatId);
         // 请求模型
         return pdfChatClient.prompt()
                 .user(prompt)

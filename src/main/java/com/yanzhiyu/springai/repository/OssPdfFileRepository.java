@@ -1,7 +1,11 @@
 package com.yanzhiyu.springai.repository;
 
+import com.yanzhiyu.springai.entity.dto.PdfFileDTO;
+import com.yanzhiyu.springai.mapper.PdfFileMapper;
+import com.yanzhiyu.springai.mq.MsgProducerService;
 import com.yanzhiyu.springai.utils.OssUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -12,8 +16,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author yanzhiyu
@@ -31,6 +37,15 @@ public class OssPdfFileRepository implements FileRepository {
     @jakarta.annotation.Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @jakarta.annotation.Resource
+    private PdfFileMapper pdfFileMapper;
+
+    @jakarta.annotation.Resource
+    private MsgProducerService msgProducerService;
+
+    @jakarta.annotation.Resource
+    RedisChatHistory redisChatHistory;
+
     @Override
     public String save(String chatId, Resource resource) {
         try {
@@ -45,10 +60,21 @@ public class OssPdfFileRepository implements FileRepository {
             // 上传的文件名也保持唯一
             String fileUrl = ossUtil.upload(fileBytes, encodeFilename);
 
+            // 会话记录写入到Redis
+            redisChatHistory.save("pdf", chatId);
+
             // 使用 Redis Hash 存储原始文件名和编码后的文件名
             String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-            stringRedisTemplate.opsForHash().put(redisKey, "uniqueFilename", uniqueFilename);
-            stringRedisTemplate.opsForHash().put(redisKey, "encodeFileName", encodeFilename);
+            saveToRedis(redisKey, uniqueFilename, encodeFilename);
+
+            // 异步写入消息队列
+            PdfFileDTO pdfFileDTO = new PdfFileDTO();
+            pdfFileDTO.setCreateTime(LocalDateTime.now());
+            pdfFileDTO.setUpdateTime(LocalDateTime.now());
+            pdfFileDTO.setChatId(chatId);
+            pdfFileDTO.setUniqueFileName(uniqueFilename);
+            pdfFileDTO.setEncodeFileName(encodeFilename);
+            msgProducerService.sendPdfFile(pdfFileDTO);
 
             return uniqueFilename;
         } catch (IOException e) {
@@ -72,20 +98,50 @@ public class OssPdfFileRepository implements FileRepository {
     @Override
     public String getEncodeFileName(String chatId) {
         String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-        Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "encodeFileName");
-        if (encodedFilename == null) {
+        if (stringRedisTemplate.hasKey(redisKey)) {
+            Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "encodeFileName");
+            if (encodedFilename == null) {
+                throw new RuntimeException("File not found for chatId: " + chatId);
+            }
+            return encodedFilename.toString();
+        }
+
+        // 从db获取
+        PdfFileDTO pdfFile = pdfFileMapper.getPdfFile(chatId);
+        if (pdfFile == null) {
             throw new RuntimeException("File not found for chatId: " + chatId);
         }
-        return encodedFilename.toString();
+        saveToRedis(redisKey, pdfFile.getUniqueFileName(), pdfFile.getEncodeFileName());
+
+        return pdfFile.getEncodeFileName();
     }
 
     @Override
     public String getUniqueFileName(String chatId) {
         String redisKey = CHAT_FILE_KEY_PREFIX + chatId;
-        Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "uniqueFilename");
-        if (encodedFilename == null) {
+        if (stringRedisTemplate.hasKey(redisKey)) {
+            Object encodedFilename = stringRedisTemplate.opsForHash().get(redisKey, "uniqueFilename");
+            if (encodedFilename == null) {
+                throw new RuntimeException("File not found for chatId: " + chatId);
+            }
+            return encodedFilename.toString();
+        }
+
+        // 从db获取
+        PdfFileDTO pdfFile = pdfFileMapper.getPdfFile(chatId);
+        if (pdfFile == null) {
             throw new RuntimeException("File not found for chatId: " + chatId);
         }
-        return encodedFilename.toString();
+        saveToRedis(redisKey, pdfFile.getUniqueFileName(), pdfFile.getEncodeFileName());
+
+        return pdfFile.getUniqueFileName();
     }
+
+
+    public void saveToRedis(String redisKey, String uniqueFileName, String encodeFileName){
+        stringRedisTemplate.opsForHash().put(redisKey, "uniqueFilename", uniqueFileName);
+        stringRedisTemplate.opsForHash().put(redisKey, "encodeFileName", encodeFileName);
+        stringRedisTemplate.expire(redisKey, 1, TimeUnit.HOURS);
+    }
+
 }

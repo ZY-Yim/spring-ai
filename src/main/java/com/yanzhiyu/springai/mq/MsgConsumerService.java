@@ -2,8 +2,10 @@ package com.yanzhiyu.springai.mq;
 
 import com.yanzhiyu.springai.entity.dto.ChatTypeDTO;
 import com.yanzhiyu.springai.entity.dto.MsgDTO;
+import com.yanzhiyu.springai.entity.dto.PdfFileDTO;
 import com.yanzhiyu.springai.mapper.ChatTypeMapper;
 import com.yanzhiyu.springai.mapper.MsgMapper;
+import com.yanzhiyu.springai.mapper.PdfFileMapper;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -23,6 +25,9 @@ public class MsgConsumerService {
     @Resource
     private ChatTypeMapper chatTypeMapper;
 
+    @Resource
+    private PdfFileMapper pdfFileMapper;
+
     @KafkaListener(topics = "msg-topic", groupId = "msg-consumer-group")
     @Transactional
     public void consume(MsgDTO msgDTO) {
@@ -36,6 +41,14 @@ public class MsgConsumerService {
     public void consume(ChatTypeDTO chatTypeDTO) {
         System.out.println("Consumed message: " + chatTypeDTO);
         chatTypeMapper.insert(chatTypeDTO);
+        System.out.println("Message saved to database");
+    }
+
+    @KafkaListener(topics = "pdf-file-topic", groupId = "msg-consumer-group")
+    @Transactional
+    public void consume(PdfFileDTO pdfFileDTO) {
+        System.out.println("Consumed message: " + pdfFileDTO);
+        pdfFileMapper.insert(pdfFileDTO);
         System.out.println("Message saved to database");
     }
 }

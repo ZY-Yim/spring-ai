@@ -1,5 +1,6 @@
 package com.yanzhiyu.springai;
 
+import com.yanzhiyu.springai.model.MyRedisVectorStore;
 import com.yanzhiyu.springai.utils.VectorDistanceUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
@@ -27,7 +28,7 @@ class SpringAiApplicationTests {
     private OpenAiEmbeddingModel embeddingModel;
 
     @Autowired
-    private RedisVectorStore redisVectorStore;
+    private MyRedisVectorStore myRedisVectorStore;
 
     @Autowired
     private SimpleVectorStore simpleVectorStore;
@@ -95,7 +96,7 @@ class SpringAiApplicationTests {
         List<Document> documents = reader.read();
         // documents.forEach(doc -> doc.getMetadata().put("unique_file_name", "abc"));
         // 3.写入向量库
-        redisVectorStore.add(documents);
+        myRedisVectorStore.add(documents);
         // 4.搜索
         SearchRequest request = SearchRequest.builder()
                 .query("教育的定义")
@@ -103,7 +104,7 @@ class SpringAiApplicationTests {
                 .similarityThreshold(0.6)
                 .filterExpression("file_name == '中二知识笔记\\.pdf'")
                 .build();
-        List<Document> docs = redisVectorStore.similaritySearch(request);
+        List<Document> docs = myRedisVectorStore.similaritySearch(request);
         if (docs == null) {
             System.out.println("没有搜索到任何内容");
             return;

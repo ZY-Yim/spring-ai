@@ -39,4 +39,13 @@ public interface FileRepository {
      * @return 文件名
      */
     String getUniqueFileName(String chatId);
+
+    /**
+     * 保存文件到向量库
+     *
+     * @param resource  文件
+     * @param uniqueFileName 唯一文件名
+     * @param encodeFileName 编码文件名
+     */
+    void writeToVectorStore(Resource resource, String uniqueFileName, String encodeFileName);
 }

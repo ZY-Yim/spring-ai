@@ -68,3 +68,8 @@ logging:
 
 server:
   port: 8080
+
+milvus:
+  host: localhost
+  port: 19530
+  connectTimeout: 5000

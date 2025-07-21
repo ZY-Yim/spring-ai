@@ -71,6 +71,7 @@ public class RedisChatMemory implements ChatMemory {
         // 3. 只保留最近20条消息（截断列表）
         // 不应该这样做，这样会导致前端的聊天记录丢失
         // stringRedisTemplate.opsForList().trim(PREFIX + conversationId, 0, DEFAULT_MAX_MESSAGES - 1);
+
         // 设置过期时间半小时
         stringRedisTemplate.expire(PREFIX + conversationId, 30, TimeUnit.MINUTES);
 

@@ -1,6 +1,7 @@
 package com.yanzhiyu.springai.controller;
 
 import com.yanzhiyu.springai.entity.vo.Result;
+import com.yanzhiyu.springai.model.MyRedisVectorStore;
 import com.yanzhiyu.springai.repository.ChatHistoryRepository;
 import com.yanzhiyu.springai.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,27 +49,24 @@ public class PdfController {
     SimpleVectorStore simpleVectorStore;
 
     @jakarta.annotation.Resource
-    RedisVectorStore redisVectorStore;
+    MyRedisVectorStore myRedisVectorStore;
 
     @jakarta.annotation.Resource
     ChatClient pdfChatClient;
-
-    @jakarta.annotation.Resource
-    ChatHistoryRepository chatHistoryRepository;
-
 
     @RequestMapping(value = "/chat", produces = "text/html;charset=utf-8")
     public Flux<String> chat(String prompt, String chatId) {
         // 找到会话文件名
         // InputStreamResource 类型，它默认不会携带文件名信息
         // Resource file = fileRepository.getFile(chatId);
-        String uniqueFileName = fileRepository.getUniqueFileName(chatId);
         String encodeFileName = fileRepository.getEncodeFileName(chatId);
-        if (uniqueFileName.isEmpty()) {
+        if (encodeFileName.isEmpty()) {
             return Flux.just("请上传PDF文件！");
         }
+
         // 保存会话id，上传文件的时候已经写入了，这里不需要再写入了
         // chatHistoryRepository.save("pdf", chatId);
+
         // 请求模型
         return pdfChatClient.prompt()
                 .user(prompt)
@@ -91,15 +89,14 @@ public class PdfController {
             if (!Objects.equals(file.getContentType(), "application/pdf")) {
                 return Result.fail("只能上传PDF文件！");
             }
-            // 2.保存文件
+
+            // 2.保存文件信息到redis和db和向量库，ex半小时
             fileRepository.save(chatId, file.getResource());
-            String uniqueFileName = fileRepository.getUniqueFileName(chatId);
             String encodeFileName = fileRepository.getEncodeFileName(chatId);
-            if (uniqueFileName.isEmpty()) {
+            if (encodeFileName.isEmpty()) {
                 return Result.fail("保存文件失败！");
             }
-            // 3.写入向量库
-            this.writeToVectorStore(file.getResource(), uniqueFileName, encodeFileName);
+
             return Result.ok();
         } catch (Exception e) {
             log.error("Failed to upload PDF.", e);
@@ -122,29 +119,12 @@ public class PdfController {
         // save的时候已经编码了
         String encodeFileName = fileRepository.getEncodeFileName(chatId);
         // String encodeFileName = URLEncoder.encode(Objects.requireNonNull(fileName), StandardCharsets.UTF_8);
-        // 3.返回文件
+
+        // 4.返回文件
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + encodeFileName + "\"")
                 .body(resource);
     }
 
-    private void writeToVectorStore(Resource resource, String uniqueFileName, String encodeFileName) {
-        // 1.创建PDF的读取器
-        PagePdfDocumentReader reader = new PagePdfDocumentReader(
-                // 文件源
-                resource,
-                PdfDocumentReaderConfig.builder()
-                        .withPageExtractedTextFormatter(ExtractedTextFormatter.defaults())
-                        // 每1页PDF作为一个Document
-                        .withPagesPerDocument(1)
-                        .build()
-        );
-        // 2.读取PDF文档，拆分为Document
-        List<Document> documents = reader.read();
-        documents.forEach(doc -> doc.getMetadata().put("unique_file_name", uniqueFileName));
-        documents.forEach(doc -> doc.getMetadata().put("encode_file_name", encodeFileName));
-        // 3.写入向量库
-        redisVectorStore.add(documents);
-    }
 }

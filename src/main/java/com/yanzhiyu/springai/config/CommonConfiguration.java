@@ -1,9 +1,8 @@
 package com.yanzhiyu.springai.config;
 
 import com.yanzhiyu.springai.Tools.CourseTools;
-import com.yanzhiyu.springai.entity.dto.MsgDTO;
 import com.yanzhiyu.springai.model.AlibabaOpenAiChatModel;
-import com.yanzhiyu.springai.repository.MessageWindowChatMemoryRepository;
+import com.yanzhiyu.springai.model.MyRedisVectorStore;
 import com.yanzhiyu.springai.repository.RedisChatMemory;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.annotation.Resource;
@@ -11,7 +10,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.observation.ChatModelObservationConvention;
 import org.springframework.ai.chat.prompt.ChatOptions;
@@ -19,21 +17,17 @@ import org.springframework.ai.model.SimpleApiKey;
 import org.springframework.ai.model.openai.autoconfigure.OpenAiChatProperties;
 import org.springframework.ai.model.openai.autoconfigure.OpenAiConnectionProperties;
 import org.springframework.ai.model.tool.ToolCallingManager;
-import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.ResponseErrorHandler;
@@ -165,17 +159,17 @@ public class CommonConfiguration {
     // 不加的话会有两个EmbeddingModel Bean，可以通过禁用ollama解决
     // 要新增MetadataFields，必须通过自定义Bean
     @Bean
-    public RedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
-        return RedisVectorStore.builder(jedisPooled, model)
+    public MyRedisVectorStore redisVectorStore(OpenAiEmbeddingModel model, JedisPooled jedisPooled) {
+        return MyRedisVectorStore.builder(jedisPooled, model)
                 .prefix("doc:")
                 .initializeSchema(true)
                 .indexName("spring_ai_redis")
                 .metadataFields(
                         // 定义为 TAG 类型
-                        RedisVectorStore.MetadataField.tag("file_name"),
+                        MyRedisVectorStore.MetadataField.tag("file_name"),
                         // 其他需要的字段...
-                        RedisVectorStore.MetadataField.tag("unique_file_name"),
-                        RedisVectorStore.MetadataField.tag("encode_file_name")
+                        MyRedisVectorStore.MetadataField.tag("unique_file_name"),
+                        MyRedisVectorStore.MetadataField.tag("encode_file_name")
                 )
                 .build();
     }

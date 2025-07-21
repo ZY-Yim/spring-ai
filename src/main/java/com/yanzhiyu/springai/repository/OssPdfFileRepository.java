@@ -192,6 +192,7 @@ public class OssPdfFileRepository implements FileRepository {
         setExpire(chatId);
     }
 
+    @Override
     public String prepareDocuments(String chatId) {
         // 1.获取文件名
         String encodedFilename = getEncodeFileName(chatId);

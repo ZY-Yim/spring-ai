@@ -59,7 +59,7 @@ public class PdfController {
         // 找到会话文件名
         // InputStreamResource 类型，它默认不会携带文件名信息
         // Resource file = fileRepository.getFile(chatId);
-        String encodeFileName = fileRepository.getEncodeFileName(chatId);
+        String encodeFileName = fileRepository.prepareDocuments(chatId);
         if (encodeFileName.isEmpty()) {
             return Flux.just("请上传PDF文件！");
         }

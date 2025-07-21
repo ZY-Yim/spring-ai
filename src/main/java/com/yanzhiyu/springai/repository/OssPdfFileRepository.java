@@ -123,9 +123,6 @@ public class OssPdfFileRepository implements FileRepository {
             if (encodedFilename == null) {
                 throw new RuntimeException("File not found for chatId: " + chatId);
             }
-            setExpire(chatId);
-            setDocumentExpire(encodedFilename.toString());
-
             return encodedFilename.toString();
         }
 
@@ -135,7 +132,6 @@ public class OssPdfFileRepository implements FileRepository {
             throw new RuntimeException("File not found for chatId: " + chatId);
         }
         saveToRedis(chatId, pdfFile.getUniqueFileName(), pdfFile.getEncodeFileName());
-        setDocumentExpire(pdfFile.getEncodeFileName());
 
         return pdfFile.getEncodeFileName();
     }
@@ -196,15 +192,21 @@ public class OssPdfFileRepository implements FileRepository {
         setExpire(chatId);
     }
 
-    public void setDocumentExpire(String encodedFilename) {
+    public String prepareDocuments(String chatId) {
+        // 1.获取文件名
+        String encodedFilename = getEncodeFileName(chatId);
+
         // 判断redis中是否有数据，有的话设置过期时间，没有的话从db加载
         if (myRedisVectorStore.doExpire(new Filter.Expression(Filter.ExpressionType.EQ
                 , new Filter.Key("encode_file_ame")
                 , new Filter.Value(encodedFilename.replace(".", "\\.").replace("%", "\\%"))))) {
-            return;
+            return encodedFilename;
         }
 
-        // 从db加载
-        return;
+        // 重新加载
+        Resource resource = getFile(chatId);
+        writeToVectorStore(resource, getUniqueFileName(chatId), encodedFilename);
+
+        return encodedFilename;
     }
 }

@@ -1,5 +1,6 @@
 package com.yanzhiyu.springai.repository;
 
+import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.core.io.Resource;
 
 /**
@@ -48,4 +49,11 @@ public interface FileRepository {
      * @param encodeFileName 编码文件名
      */
     void writeToVectorStore(Resource resource, String uniqueFileName, String encodeFileName);
+
+    /**
+     * 准备数据，如果redis里有，延长过期时间，如果没有重新加载
+     *
+     * @param chatId 会话id
+     */
+    String prepareDocuments(String chatId);
 }

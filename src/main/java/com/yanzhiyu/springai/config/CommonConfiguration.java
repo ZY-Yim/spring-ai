@@ -174,7 +174,8 @@ public class CommonConfiguration {
                         // 定义为 TAG 类型
                         RedisVectorStore.MetadataField.tag("file_name"),
                         // 其他需要的字段...
-                        RedisVectorStore.MetadataField.tag("unique_file_name")
+                        RedisVectorStore.MetadataField.tag("unique_file_name"),
+                        RedisVectorStore.MetadataField.tag("encode_file_name")
                 )
                 .build();
     }

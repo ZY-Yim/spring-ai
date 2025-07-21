@@ -47,12 +47,12 @@ public class OssPdfFileRepository implements FileRepository {
     RedisChatHistory redisChatHistory;
 
     @Override
-    public String save(String chatId, Resource resource) {
+    public Boolean save(String chatId, Resource resource) {
         try {
             // ✅ 修复点：使用 InputStream 读取资源，而不是 getFile()
             byte[] fileBytes = FileCopyUtils.copyToByteArray(resource.getInputStream());
 
-            String fileName = resource.getFilename();
+            String fileName = Objects.requireNonNull(resource.getFilename()).replace("-", "_");
             // 使用 chatId + UUID + 原始文件名，确保唯一
             String uniqueFilename = chatId + "_" + UUID.randomUUID().toString().replace("-", "") + "_" + fileName;
             String encodeFilename = URLEncoder.encode(Objects.requireNonNull(uniqueFilename), StandardCharsets.UTF_8).replace("+", "%20");
@@ -76,10 +76,10 @@ public class OssPdfFileRepository implements FileRepository {
             pdfFileDTO.setEncodeFileName(encodeFilename);
             msgProducerService.sendPdfFile(pdfFileDTO);
 
-            return uniqueFilename;
+            return true;
         } catch (IOException e) {
             log.error("Failed to upload PDF to OSS.", e);
-            return "";
+            return false;
         }
     }
 

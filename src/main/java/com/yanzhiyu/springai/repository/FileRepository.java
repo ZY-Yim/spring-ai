@@ -14,7 +14,7 @@ public interface FileRepository {
      * @param resource 文件
      * @return 返回唯一一个文件名
      */
-    String save(String chatId, Resource resource);
+    Boolean save(String chatId, Resource resource);
 
     /**
      * 根据chatId获取文件

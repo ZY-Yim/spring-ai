@@ -63,6 +63,7 @@ public class PdfController {
         // InputStreamResource 类型，它默认不会携带文件名信息
         // Resource file = fileRepository.getFile(chatId);
         String uniqueFileName = fileRepository.getUniqueFileName(chatId);
+        String encodeFileName = fileRepository.getEncodeFileName(chatId);
         if (uniqueFileName.isEmpty()) {
             return Flux.just("请上传PDF文件！");
         }
@@ -72,7 +73,10 @@ public class PdfController {
         return pdfChatClient.prompt()
                 .user(prompt)
                 .advisors(a -> a.param(CONVERSATION_ID, chatId))
-                .advisors(a -> a.param(FILTER_EXPRESSION, "unique_file_name == '" + uniqueFileName.replace(".", "\\.") + "'"))
+                .advisors(a -> a.param(FILTER_EXPRESSION, "encode_file_name == '" +
+                        encodeFileName.replace(".", "\\.")
+                                .replace("%", "\\%") + "'")
+                )
                 .stream()
                 .content();
     }
@@ -88,12 +92,14 @@ public class PdfController {
                 return Result.fail("只能上传PDF文件！");
             }
             // 2.保存文件
-            String uniqueFileName = fileRepository.save(chatId, file.getResource());
+            fileRepository.save(chatId, file.getResource());
+            String uniqueFileName = fileRepository.getUniqueFileName(chatId);
+            String encodeFileName = fileRepository.getEncodeFileName(chatId);
             if (uniqueFileName.isEmpty()) {
                 return Result.fail("保存文件失败！");
             }
             // 3.写入向量库
-            this.writeToVectorStore(file.getResource(), uniqueFileName);
+            this.writeToVectorStore(file.getResource(), uniqueFileName, encodeFileName);
             return Result.ok();
         } catch (Exception e) {
             log.error("Failed to upload PDF.", e);
@@ -123,7 +129,7 @@ public class PdfController {
                 .body(resource);
     }
 
-    private void writeToVectorStore(Resource resource, String uniqueFileName) {
+    private void writeToVectorStore(Resource resource, String uniqueFileName, String encodeFileName) {
         // 1.创建PDF的读取器
         PagePdfDocumentReader reader = new PagePdfDocumentReader(
                 // 文件源
@@ -137,6 +143,7 @@ public class PdfController {
         // 2.读取PDF文档，拆分为Document
         List<Document> documents = reader.read();
         documents.forEach(doc -> doc.getMetadata().put("unique_file_name", uniqueFileName));
+        documents.forEach(doc -> doc.getMetadata().put("encode_file_name", encodeFileName));
         // 3.写入向量库
         redisVectorStore.add(documents);
     }

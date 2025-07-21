@@ -199,7 +199,7 @@ public class OssPdfFileRepository implements FileRepository {
 
         // 判断redis中是否有数据，有的话设置过期时间，没有的话从db加载
         if (myRedisVectorStore.doExpire(new Filter.Expression(Filter.ExpressionType.EQ
-                , new Filter.Key("encode_file_ame")
+                , new Filter.Key("encode_file_name")
                 , new Filter.Value(encodedFilename.replace(".", "\\.").replace("%", "\\%"))))) {
             return encodedFilename;
         }
